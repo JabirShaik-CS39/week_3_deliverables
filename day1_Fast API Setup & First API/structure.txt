@@ -1,0 +1,396 @@
+# Installation of FastAPI & Uvicorn
+
+--> create a folder and open in VScode.
+--> Run the terminal and go to the particular folder.
+--> Run the following command to Create Virtual Environment.
+    "python -m venv venv"
+
+--> To activate the Virtual Environment run the following command.
+    "venv\Scripts\activate"
+
+--> To install Fast API run the following command.
+    "pip install fastapi"
+
+--> To Install Uvicorn Server
+    "pip install uvicorn" or "pip install fastapi uvicorn"
+
+--> To verify run the following command
+    " pip list "
+
+Expected output: 
+
+fastapi
+uvicorn
+pydantic
+starlette
+
+# Note: Python should be installed before the setup for fastapi and uvicorn 
+
+# Create Project Structure
+A professional FastAPI project follows a layered architecture.
+
+project structure/
+│
+├── app/
+│   │
+│   ├── main.py
+│   │
+│   ├── routers/
+│   │   └── user_router.py
+│   │
+│   ├── models/
+│   │   └── user_model.py
+│   │
+│   ├── schemas/
+│   │   └── user_schema.py
+│   │
+│   ├── services/
+│   │   └── user_service.py
+│   │
+│   └── core/
+│       └── config.py
+│
+├── requirements.txt
+│
+└── venv/
+
+
+# Routers:- The routers folder contains all API endpoints (routes).
+
+It is responsible for:
+--> Receiving HTTP requests
+--> Validating incoming data
+--> Calling business logic from services
+--> Returning responses
+Think of routers as the entry gate of your application.
+
+
+# models:- Models define how data is stored in the database.
+Models represent database tables.
+Example
+
+users Table
+--------------------
+id
+name
+email
+password
+
+# Responsibilities
+Models define:
+
+--> Table names
+--> Columns
+--> Data types
+--> Relationships
+
+# schemas
+Schemas define:
+
+--> Request format
+--> Response format
+--> Validation rules
+FastAPI uses Pydantic schemas.
+
+-> Models are for databases.
+-> Schemas are for APIs.
+-> Never expose database models directly.
+
+Common Schemas
+--> Create Schema
+--> Update Schema
+--> Response Schema
+
+# services
+Services contain business logic.
+This is the most important layer.
+
+# Responsibilities
+Services handle:
+
+--> Calculations
+--> Business rules
+--> Database interactions
+--> External API calls
+--> Authentication logic
+
+# core 
+--> The core folder contains shared application infrastructure.
+--> Everything used globally belongs here.
+--> It contains configurations, shared resources, and application-wide utilities that are used throughout the project.
+--> Stores application settings.
+Examples:
+
+--> App Name
+--> Database URL
+--> Secret Key
+--> API Version
+--> Debug Mode
+
+
+# Path Parameters
+Path Parameters are values that are passed as part of the URL path and are used to identify a specific resource.
+
+A path parameter is a variable section of a URL.
+Example URL
+http://127.0.0.1:8000/users/101
+
+Here:
+
+/users → fixed path
+101 → path parameter
+
+The value 101 can change dynamically.
+
+Path parameters are commonly used to:
+
+Fetch a specific record
+Update a specific record
+Delete a specific record
+Identify resources uniquely
+
+Examples:
+
+/products/10
+/users/5
+/orders/2001
+/books/100
+
+
+# Query Parameters
+
+Query parameters are values passed in the URL after the ? symbol.
+
+They are commonly used for:
+
+Filtering data
+Searching records
+Pagination
+Sorting
+Optional inputs
+URL Structure
+https://example.com/products?category=electronics&page=2
+
+Here:
+
+category=electronics → Query Parameter
+page=2 → Query Parameter
+
+The base URL is:
+
+https://example.com/products
+
+The query parameters start after ?.
+
+Query Parameter Syntax
+Single Query Parameter
+/products?name=laptop
+
+Parameter:
+
+name = laptop
+Multiple Query Parameters
+/products?name=laptop&page=2&sort=price
+
+Parameters:
+
+name = laptop
+page = 2
+sort = price
+
+# Request Body Using Pydantic BaseModel
+
+One of the most powerful features of FastAPI is its integration with Pydantic. Pydantic allows you to define the structure of incoming data using Python classes.
+
+When a client sends data to your API (usually in JSON format), FastAPI uses Pydantic models to:
+
+Validate data automatically
+Convert data types automatically
+Generate API documentation
+Return meaningful error messages
+
+A request body is the data sent by the client to the server.
+
+Example:
+
+{
+    "name": "Jabir",
+    "age": 25,
+    "email": "jabir@gmail.com"
+}
+
+When this JSON reaches FastAPI, it needs a structure to validate the data.
+
+That's where Pydantic's BaseModel comes in.
+BaseModel is a class provided by Pydantic.
+
+It helps define:
+
+Required fields
+Optional fields
+Data types
+Validation rules
+
+# Response Models
+A Response Model in FastAPI defines the structure of the data that your API sends back to the client.
+
+It is one of FastAPI's most powerful features because it:
+
+Validates response data
+Filters unwanted fields
+Generates API documentation automatically
+Improves security
+Provides type checking and editor support
+
+Imagine you have a user database:
+
+{
+    "id": 1,
+    "name": "Jabir",
+    "email": "jabir@gmail.com",
+    "password": "secret123"
+}
+
+If your API returns all fields:
+
+@app.get("/user")
+def get_user():
+    return {
+        "id": 1,
+        "name": "Jabir",
+        "email": "jabir@gmail.com",
+        "password": "secret123"
+    }
+
+The password becomes visible to clients.
+
+This is a security issue.
+
+Response Models solve this problem.
+
+flow diagram:
+Database
+    ↓
+Python Dictionary/Object
+    ↓
+Response Model Validation
+    ↓
+Filtered JSON Response
+    ↓
+Client
+
+
+
+# HTTP Status Codes
+HTTP Status Codes are 3-digit numbers returned by a web server to indicate the result of a client's request.
+
+When a browser, mobile app, or API sends a request to a server, the server responds with:
+
+Status Code
+Headers
+Response Body (optional)
+
+Example:
+
+GET /users/1 HTTP/1.1
+Host: example.com
+
+Server Response:
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "John"
+}
+
+Here:
+
+200 OK
+
+is the HTTP Status Code.
+
+Structure of HTTP Status Codes
+
+Status codes are divided into 5 categories:
+
+Range	        Category	            Meaning
+100-199	        Informational	        Request received
+200-299	        Success	Request         successful
+300-399	        Redirection	            Further action needed
+400-499	        Client Error	        Problem from client
+500-599	        Server Error	        Problem from server
+
+
+# Swagger/OpenAPI Documentation
+Swagger / OpenAPI Documentation is one of the most important parts of modern API development, especially when working with frameworks like FastAPI, Flask, or Spring Boot. It basically gives you a visual + machine-readable map of your API.
+
+OpenAPI (formerly Swagger Specification) is a standard format used to describe REST APIs.
+
+It defines:
+
+Available endpoints (/users, /login, etc.)
+HTTP methods (GET, POST, PUT, DELETE)
+Request parameters (path, query, body)
+Response structure
+Authentication methods
+Status codes
+
+Swagger is the set of tools built around OpenAPI.
+
+Swagger includes:
+
+Swagger UI (visual API documentation)
+Swagger Editor (write/test API specs)
+Swagger Codegen (generate client/server code)
+
+# In simple terms:
+
+OpenAPI = specification (rules)
+Swagger = tools that use those rules
+# Swagger UI (Most Important for You)
+
+Swagger UI is a web-based interactive documentation page.
+
+When you run FastAPI, you automatically get:
+
+http://127.0.0.1:8000/docs
+
+This page lets you:
+
+View all API endpoints
+Click and test APIs directly in browser
+See request/response formats
+Understand API without writing code
+
+# FastAPI vs Flask vs Django
+Feature	            FastAPI	                Flask	            Django
+Performance	        Very High	            Medium	            Medium
+Learning Curve	    Easy	                Easy	            Moderate
+Validation	        Built-in	            Manual	            Forms
+Async Support	    Excellent	            Limited	            Good
+API Docs	        Automatic	            Extra Libraries	    Extra Libraries
+ORM	                External	            External	        Built-in
+Best For	        APIs & Microservices	Small Apps	        Full Stack Apps
+
+Use FastAPI when:
+
+✅ Building REST APIs
+
+✅ AI/ML Applications
+
+✅ Microservices
+
+✅ Real-Time Systems
+
+✅ High Performance APIs
+
+Examples:
+
+OpenAI integrations
+RAG applications
+AI Agents
+Chatbots
+Recommendation systems
+
