@@ -1,0 +1,463 @@
+# Pydantic V2
+Pydantic is a Python library used for:
+
+--> Data validation
+--> Data parsing
+--> Data serialization
+--> Schema generation
+--> Type enforcement
+
+It converts raw input data into strongly typed Python objects while validating correctness.
+
+# Example
+from pydantic import BaseModel
+class User(BaseModel):
+    name: str
+    age: int
+
+user = User(name="Jabir", age="25")
+print(user)
+print(type(user.age))
+
+# Output:
+name='Jabir' age=25
+<class 'int'>
+
+
+# importance of Pydantic in Fast API
+FastAPI uses Pydantic for:
+
+--> Request validation
+--> Response validation
+--> API documentation generation
+--> Data serialization
+
+# Example:
+
+from fastapi import FastAPI
+from pydantic import BaseModel
+app = FastAPI()
+class User(BaseModel):
+    name: str
+    age: int
+@app.post("/users")
+def create_user(user: User):
+    return user
+
+Pydantic V2 Was Created
+
+Pydantic V1 was excellent but had limitations:
+
+--> Slower validation
+--> Complex internals
+--> Difficult custom validators
+--> Performance bottlenecks
+
+Pydantic V2 introduces:
+Rust-powered engine
+
+Uses:
+--> pydantic-core
+--> written in Rust.
+
+Benefits:
+--> 5x–50x faster
+--> Lower memory usage
+--> Better validation system
+
+# Pydantic V1 vs V2
+Feature	                V1	                V2
+Validation Engine	    Python	            Rust
+Speed	                Moderate	    Very Fast
+validator	            Yes	            Deprecated
+field_validator	        No	                Yes
+root_validator	        Yes	            Deprecated
+model_validator	        No	                Yes
+parse_obj	            Yes         	Deprecated
+model_validate	        No	                Yes
+dict()	                Yes	            Deprecated
+model_dump()	        Yes	
+json()	                Yes	            Deprecated
+model_dump_json()	    Yes	
+
+# Field()
+
+Pydantic V2 Validation with Field()
+
+In Pydantic V2, Field() is used to add metadata, constraints, and validation rules to model fields.
+
+It helps ensure that incoming data is valid before your application processes it.
+
+# min_length
+Used for:
+
+--> strings
+--> lists
+--> tuples
+--> sets
+Ensures minimum number of characters/items.
+
+# Additional Numeric Validators
+Besides ge and le, Pydantic also supports:
+Validator	        Meaning
+gt	                Greater than
+ge	                Greater than or equal
+lt	                Less than
+le	                Less than or equal
+
+multiple_of	Must be multiple of value
+
+Constraint	        Purpose	                    Example
+min_length	        Minimum string length	    min_length=3
+max_length	        Maximum string length	    max_length=20
+ge	                Greater than or equal	    ge=18
+le	                Less than or equal	        le=60
+gt	                Greater than	            gt=0
+lt	                Less than	                lt=100
+pattern	            Regex validation	        pattern=r"^\d{10}$"
+
+
+# field_validator() and model_validator() Deep Dive
+
+In Pydantic V2, validation has been redesigned to be faster, cleaner, and more flexible.
+The old V1 validators:
+--> @validator
+--. @root_validator
+
+have been replaced with:
+--> @field_validator
+--> @model_validator
+# field_validator()
+A field_validator() validates a specific field.
+Use it when:
+
+--> Validate one field
+--> Modify a field value
+--> Apply business rules to a field
+--> Check formatting
+--> Restrict values
+
+# Basic Syntax
+
+from pydantic import BaseModel, field_validator
+class User(BaseModel):
+    name: str
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value):
+        if len(value) < 3:
+            raise ValueError("Name must contain at least 3 characters")
+        return value
+
+
+# Usage
+user = User(name="John")
+print(user)
+
+# Output:
+name='John'
+
+# Invalid Example
+User(name="Jo")
+
+# Output:
+ValidationError:
+Name must contain at least 3 characters
+
+# Validation Flow
+
+Input Data
+    ↓
+Field Validation
+    ↓
+Field Value Returned
+    ↓
+Model Created
+
+#field_validator()
+
+✔ Validates individual fields
+✔ Can transform values
+✔ Supports before and after modes
+✔ Best for field-level business rules
+
+# model_validator()
+
+model_validator() validates the entire model.
+Use it when:
+
+--> Compare multiple fields
+--> Cross-field validation
+--> Business logic involving many fields
+--> Validate relationships between fields
+
+Think of it as:
+
+Field Validator
+      ↓
+Validates one field
+
+Model Validator
+      ↓
+Validates entire object
+
+# Basic Syntax
+from pydantic import BaseModel, model_validator
+class User(BaseModel):
+    password: str
+    confirm_password: str
+
+    @model_validator(mode="after")
+    def validate_passwords(self):
+        if self.password != self.confirm_password:
+            raise ValueError("Passwords do not match")
+        return self
+
+
+# Usage
+User(
+    password="123456",
+    confirm_password="123456"
+)
+Valid.
+
+Invalid:
+User(
+    password="123456",
+    confirm_password="abc"
+)
+
+# Output:
+ValidationError:
+Passwords do not match
+
+# model_validator()
+
+✔ Validates the entire model
+✔ Cross-field validation
+✔ Compare multiple fields
+✔ Supports before and after modes
+
+# Nested Models in Pydantic V2 (Deep Explanation)
+Nested models are one of the most powerful features of Pydantic V2. They allow you to create complex 
+data structures by placing one Pydantic model inside another.
+
+Think of nested models as representing real-world relationships:
+
+--> A User has an Address
+--> An Order has Products
+--> A Company has Employees
+--> A Blog has Comments
+Instead of storing everything in one huge model, we divide data into smaller reusable models.
+
+# Nested Models
+Imagine a user registration API.
+Without nesting:
+
+from pydantic import BaseModel
+class User(BaseModel):
+    name: str
+    email: str
+    street: str
+    city: str
+    state: str
+    country: str
+
+Problems:
+--> Too many fields
+--> Hard to maintain
+--> Address cannot be reused elsewhere
+
+Better approach:
+
+from pydantic import BaseModel
+
+class Address(BaseModel):
+    street: str
+    city: str
+    state: str
+    country: str
+
+class User(BaseModel):
+    name: str
+    email: str
+    address: Address
+
+Now Address becomes a reusable model.
+
+# Required vs Optional Comparison Table
+Declaration	            Required	        Accepts None
+name: str	                Yes	                No
+name: str = "abc"	        No	                No
+name: Optional[str]	        Yes             	Yes
+name: Optional[str] = None	No	                Yes
+name: str  None`	        Yes
+name: str	None = None`	No
+
+#
+Field	       Required	            Nullable
+id	              Yes	                No
+username	      Yes	                No
+email	          Yes	                No
+phone	           No	                Yes
+age	               No	                Yes
+address	          Yes	                Yes
+
+
+# Request/Response Schema Separation in FastAPI with Pydantic V2
+One of the most important concepts in FastAPI development is separating Request Schemas and Response 
+Schemas.
+Many beginners create a single User model and use it everywhere. This works for small projects but 
+becomes a serious security and maintenance problem in real-world applications.
+
+Why Separate Schemas?
+
+Imagine a User table:
+
+id = 1
+name = "Jabir"
+email = "jabir@gmail.com"
+password = "secret123"
+created_at = "2026-06-02"
+
+Different API operations need different fields.
+
+Operation	Required Fields
+Create User	name, email, password
+Update User	name, email (optional)
+Get User	id, name, email, created_at
+Database	id, name, email, password_hash, created_at
+
+If you use one schema everywhere:
+
+class User(BaseModel):
+    id: int
+    name: str
+    email: str
+    password: str
+    created_at: datetime
+
+Problems:
+--> Problem 1: Client must send ID
+{
+  "id": 1,
+  "name": "Jabir",
+  "email": "jabir@gmail.com",
+  "password": "123"
+}
+
+The client should NOT provide the ID.
+Database generates it.
+
+--> Problem 2: Password Exposure
+API response:
+
+{
+  "id": 1,
+  "name": "Jabir",
+  "email": "jabir@gmail.com",
+  "password": "123"
+}
+
+Huge security issue.
+
+--> Problem 3: Update Difficulties
+User only wants to update email.
+
+{
+  "email": "new@gmail.com"
+}
+
+But schema requires all fields.
+
+Validation fails.
+
+Correct Approach
+
+Create separate schemas.
+
+schemas/
+│
+├── user.py
+│
+├── UserCreate
+├── UserUpdate
+├── UserResponse
+
+Each schema has a single responsibility.
+
+
+# json_schema_extra in Pydantic V2
+
+json_schema_extra is a feature in Pydantic V2 that allows you to add extra metadata to the generated JSON Schema.
+
+This is especially useful when:
+
+Building APIs with FastAPI
+Generating Swagger/OpenAPI documentation
+Providing examples for request/response models
+Adding custom schema information
+Improving API documentation readability
+Why Do We Need json_schema_extra?
+
+Consider a user registration API.
+
+Without examples:
+
+class UserCreate(BaseModel):
+    username: str
+    email: str
+
+Swagger UI shows:
+
+{
+  "username": "string",
+  "email": "string"
+}
+
+This doesn't help API consumers much.
+
+With json_schema_extra:
+
+
+# Build User & Product Schemas with Validations in Pydantic V2 (Deep Explanation)
+
+In FastAPI, schemas define the structure of data entering and leaving your API. Pydantic V2 
+provides powerful validation mechanisms to ensure data integrity before it reaches your business 
+logic.
+
+# Why Schemas Are Important
+Without validation:
+
+{
+    "name": "",
+    "email": "abc",
+    "age": -10
+}
+
+This invalid data could enter your database.
+
+With Pydantic validation:
+
+{
+    "detail": [
+        {
+            "msg": "String should have at least 2 characters"
+        }
+    ]
+}
+
+The request is rejected automatically.
+User Schema Design
+
+A User typically contains:
+
+Field	        Type	        Validation
+id	            int	            Auto-generated
+name	        str	            Required, 2-50 chars
+email	        EmailStr	    Valid email
+age	            int	            18-100
+phone	        str	            Pattern validation
+password	    str	            Strong password
+created_at	    datetime	    Auto-generated
