@@ -478,24 +478,3 @@ class ProductCreate(BaseModel):
 
 
 # from fastapi import FastAPI
-from pydantic import BaseModel, ConfigDict
-
-app = FastAPI()
-
-class UserCreate(BaseModel):
-
-    username: str
-    email: str
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "username": "jabir123",
-                "email": "jabir@gmail.com"
-            }
-        }
-    )
-
-@app.post("/users")
-def create_user(user: UserCreate):
-    return user
