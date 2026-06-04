@@ -1,0 +1,83 @@
+# password Hashing
+--> install - pip install passlib[bcrypt]
+
+Password Hashing using Passlib & Bcrypt (FastAPI Security)
+
+Password hashing is one of the most important security practices in any application. You should never store plain-text passwords in a database.
+
+Why Password Hashing?
+
+Suppose a user registers with:
+
+Email: john@example.com
+Password: Welcome@123
+
+❌ Bad Database Storage
+
+id	email	password
+1	john@example.com	Welcome@123
+
+If the database is compromised, attackers immediately know the password.
+
+Better Approach: Hashing
+
+Instead of storing:
+
+Welcome@123
+
+Store:
+
+$2b$12$L8sTQxM4I6Yj2B8XK...
+
+This is called a hash.
+
+Database:
+
+id	email	password_hash
+1	john@example.com	$2b$12$L8sTQxM4I6Yj2B8XK...
+
+Even if attackers steal the database, they cannot directly see the password.
+
+What is Hashing?
+
+Hashing is a one-way mathematical operation.
+
+Password
+   ↓
+Hash Function
+   ↓
+Hashed Password
+
+Example:
+
+"Welcome@123"
+
+becomes
+
+$2b$12$6mTj7hL8j...
+
+You cannot reverse it.
+
+Hash → Password ❌
+
+This is what makes hashing secure.
+
+Why Not Use SHA256?
+
+Many beginners use:
+
+import hashlib
+
+hashlib.sha256("Welcome@123".encode()).hexdigest()
+
+Result:
+
+6c5f...
+
+Problem:
+
+SHA256 is too fast.
+
+Modern GPUs can try billions of guesses per second.
+
+Attackers can crack weak passwords quickly.

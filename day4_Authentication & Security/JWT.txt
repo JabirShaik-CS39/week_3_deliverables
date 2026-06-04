@@ -1,0 +1,24 @@
+JWT Authentication
+
+JWT = JSON Web Token
+
+Used for:
+
+Login
+Authentication
+Authorization
+JWT Structure
+HEADER.PAYLOAD.SIGNATURE
+
+Example:
+
+eyJhbGciOiJIUzI1Ni...
+
+Contains:
+
+{
+  "sub": "jabir@gmail.com",
+  "exp": 1717500000
+}
+Install
+pip install python-jose[cryptography]
