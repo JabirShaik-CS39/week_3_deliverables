@@ -1,0 +1,90 @@
+# In databases (especially PostgreSQL and SQLAlchemy), column types and constraints define how your
+data is stored and what rules it must follow.
+
+Column Types (Data Types)
+
+Column types define what kind of data a column can store.
+
+Common SQL/PostgreSQL column types
+
+-> Numeric Types
+INTEGER → whole numbers (e.g., 1, 100, -5)
+BIGINT → very large integers
+DECIMAL(p,s) / NUMERIC → exact precision (used for money)
+FLOAT / REAL → approximate decimal values
+
+-> String Types
+VARCHAR(n) → variable length string with limit
+TEXT → unlimited string
+CHAR(n) → fixed-length string
+
+Example:
+
+name VARCHAR(100)
+bio TEXT
+-> Boolean Type
+
+BOOLEAN → TRUE / FALSE
+-> Date & Time Types
+
+DATE → only date (2026-06-03)
+TIME → only time
+TIMESTAMP → date + time
+TIMESTAMPTZ → timestamp with timezone
+
+-> Special Types
+
+UUID → unique identifiers
+JSON / JSONB → structured JSON data
+ARRAY → list of values
+2. Constraints
+
+Constraints are rules applied to columns to maintain data integrity.
+
+-> NOT NULL
+
+Column cannot be empty.
+
+name VARCHAR(100) NOT NULL
+
+--> Means every record must have a value for name.
+
+-> UNIQUE
+
+Ensures all values are different.
+
+email VARCHAR(100) UNIQUE
+
+--> No two users can have the same email.
+
+-> PRIMARY KEY
+
+Uniquely identifies each row.
+
+id SERIAL PRIMARY KEY
+
+--> Combines:
+
+NOT NULL
+UNIQUE
+-> FOREIGN KEY
+
+Links two tables.
+
+user_id INTEGER REFERENCES users(id)
+
+--> Ensures relationship between tables.
+
+-> CHECK
+
+Validates condition.
+
+age INTEGER CHECK (age >= 18)
+
+-->  Only allows age 18 or above.
+
+DEFAULT
+
+Sets default value.
+
+is_active BOOLEAN DEFAULT TRUE

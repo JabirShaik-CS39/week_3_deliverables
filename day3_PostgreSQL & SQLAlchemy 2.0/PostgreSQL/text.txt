@@ -1,0 +1,13 @@
+--> Password: Welcome@2826
+
+--> " psql -U postgres "            # Command to goto postgresql 
+
+--> " CREATE DATABASE "name" ; "    # To create a database
+
+--> " \c database_name "            # Connect to a database 
+
+--> " SELECT current_database(); "  # To know the current database
+
+--> " \l "                          # to check the list of databases
+
+--> " 
