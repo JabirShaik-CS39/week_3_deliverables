@@ -1,0 +1,103 @@
+Dependency Injection in FastAPI using Depends()
+
+In FastAPI, Dependency Injection (DI) is a design pattern where you “inject” reusable logic (like database sessions, authentication, configuration, etc.) into your path operations automatically using Depends().
+
+It helps you:
+
+Avoid repeating code
+Keep routes clean
+Make logic reusable and testable
+# Depends()
+
+Depends() is a FastAPI utility that tells the framework:
+
+“Before running this endpoint, execute this function and give me its result.”
+
+# Simple Example (Basic Dependency)
+
+from fastapi import FastAPI, Depends
+app = FastAPI()
+
+def common_parameters(q: str = None, limit: int = 10):
+    return {"q": q, "limit": limit}
+
+@app.get("/items/")
+def read_items(commons: dict = Depends(common_parameters)):
+    return commons
+✅ What happens here?
+common_parameters() runs first
+Its return value is injected into read_items()
+You don’t call it manually
+🔹 Real Use Case: Database Dependency (Very Important)
+
+This is the most common use in real projects.
+
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from database import SessionLocal
+
+# Dependency function
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+Using it in API:
+@app.get("/users/")
+def get_users(db: Session = Depends(get_db)):
+    return db.query(User).all()
+🔥 Why yield is used?
+yield creates a generator dependency
+FastAPI ensures:
+DB session opens before request
+DB session closes after request (cleanup handled automatically)
+🔹 Authentication Dependency Example
+from fastapi import Depends, HTTPException
+
+def get_current_user(token: str):
+    if token != "valid_token":
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return {"user_id": 1}
+
+@app.get("/profile")
+def profile(user: dict = Depends(get_current_user)):
+    return user
+🔹 Types of Dependencies
+1. Function Dependency
+Depends(some_function)
+2. Class Dependency
+class Service:
+    def __init__(self):
+        self.name = "MyService"
+
+@app.get("/")
+def root(service: Service = Depends(Service)):
+    return service.name
+3. Nested Dependencies
+def auth():
+    return "user"
+
+def get_data(user = Depends(auth)):
+    return {"user": user}
+🔹 Where Depends() is used in real apps
+Database sessions (SQLAlchemy)
+Authentication (JWT, OAuth2)
+Role-based access control
+Configuration loading
+External API clients
+Logging / tracing
+🧠 Mental Model
+
+Think of it like:
+
+“FastAPI is your assistant. You tell it what you need, and it prepares it before your function runs.”
+
+🚀 Key Takeaway
+parameter: Type = Depends(function)
+
+👉 FastAPI automatically:
+
+calls function()
+injects result into your endpoint
+handles setup + cleanup if needed

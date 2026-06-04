@@ -5,8 +5,8 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()
 
-class Admins(Base):
-    __tablename__ = "Admin"
+class Users(Base):
+    __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
@@ -21,13 +21,13 @@ Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 s = Session()
 
-Admins = [
-    Admins(name="Jani", age=32),
-    Admins(name="mahesh", age=35),
-    Admins(name="charan", age=15)
+Users = [
+    Users(name="Jani", age=32),
+    Users(name="mahesh", age=35),
+    Users(name="charan", age=15)
 ]
 
-s.add_all(Admins)
+s.add_all(Users)
 s.commit()
 
-print("Admins inserted successfully")
+print("Users inserted successfully")
