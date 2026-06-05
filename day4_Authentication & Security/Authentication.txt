@@ -1,0 +1,285 @@
+## Authentication & Security in FastAPI
+These topics form the foundation of building secure REST APIs in FastAPI.
+
+1. Authentication Endpoints
+Authentication verifies who the user is.
+
+A typical FastAPI application contains these endpoints:
+
+Endpoint	Method	Purpose
+/register	POST	Create a new user
+/login	POST	Authenticate user and generate JWT tokens
+/me	GET	Get currently logged-in user
+/refresh	POST	Generate new access token using refresh token
+1.1 /register
+Purpose
+Register a new user.
+
+Flow
+User enters email and password.
+
+Password is hashed using Passlib/Bcrypt.
+
+User details are stored in database.
+
+Plain password is never stored.
+
+Example Request
+POST /register
+
+{
+    "email": "admin@gmail.com",
+    "password": "Admin@123"
+}
+
+1.2 /login
+Purpose
+Verify credentials and generate JWT tokens.
+
+Flow
+User sends username/email and password.
+
+Password is verified.
+
+JWT Access Token is generated.
+
+JWT Refresh Token is generated.
+
+Tokens are returned.
+
+
+1.3 /me
+Purpose
+Return details of currently authenticated user.
+
+Request
+GET /me
+
+Authorization: Bearer TOKEN
+Response
+{
+    "id": 1,
+    "email": "admin@gmail.com"
+}
+Example
+@router.get("/me")
+def get_me(current_user=Depends(get_current_user)):
+    return current_user
+
+1.4 /refresh
+Purpose
+Generate a new Access Token using Refresh Token.
+
+Why?
+Access tokens should expire quickly.
+
+Example:
+
+Access Token  = 15 minutes
+Refresh Token = 7 days
+When access token expires:
+
+Client → /refresh
+Refresh Token → Verified
+New Access Token → Returned
+
+2. Route Protection with Depends()
+FastAPI uses Dependency Injection.
+
+Protected routes require a valid JWT.
+
+OAuth2PasswordBearer
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="login"
+)
+This extracts:
+
+Authorization: Bearer TOKEN
+from request headers.
+
+Current User Dependency
+def get_current_user(
+    token: str = Depends(oauth2_scheme)
+):
+    payload = jwt.decode(
+        token,
+        SECRET_KEY,
+        algorithms=[ALGORITHM]
+    )
+
+    return payload
+Protected Route
+@app.get("/profile")
+def profile(
+    current_user=Depends(get_current_user)
+):
+    return current_user
+Flow
+Client Request
+      ↓
+JWT Token
+      ↓
+Depends(get_current_user)
+      ↓
+Token Validation
+      ↓
+Access Granted
+Without token:
+
+{
+    "detail": "Not authenticated"
+}
+3. Role-Based Access Control (RBAC)
+Authentication answers:
+
+Who are you?
+Authorization answers:
+
+What can you do?
+User Table
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+
+    email = Column(String)
+
+    role = Column(String)
+Example Roles
+Admin
+User
+Manager
+Farmer
+Store Role in JWT
+token_data = {
+    "sub": user.email,
+    "role": user.role
+}
+Admin Route
+@app.get("/admin")
+def admin_dashboard(
+    user=Depends(admin_required)
+):
+    return {
+        "message": "Welcome Admin"
+    }
+
+Access Matrix
+Action	User	Admin
+View Products	✅	✅
+Create Product	❌	✅
+Update Product	❌	✅
+Delete Product	❌	✅
+View Profile	✅	✅
+
+4. CORS Middleware Setup
+What is CORS?
+Cross-Origin Resource Sharing.
+
+Browser blocks requests unless CORS is enabled.
+
+Add Middleware
+from fastapi.middleware.cors import CORSMiddleware
+
+Production Example
+allow_origins=[
+    "https://myapp.com",
+    "https://admin.myapp.com"
+]
+Avoid:
+
+allow_origins=["*"]
+in production.
+
+5. Environment Variables using Pydantic Settings
+Sensitive data should never be hardcoded.
+
+Bad:
+
+SECRET_KEY = "mysecretkey"
+DATABASE_URL = "postgresql://..."
+Install
+pip install pydantic-settings
+Create .env
+DATABASE_URL=postgresql://postgres:1234@localhost/testdb
+
+SECRET_KEY=my_super_secret_key
+
+ALGORITHM=HS256
+
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+settings.py
+
+Usage
+from settings import settings
+
+SECRET_KEY = settings.SECRET_KEY
+Benefits:
+No hardcoding
+Easy deployment
+Secure configuration
+Different configs for dev/test/prod
+
+6. Secure Product APIs (Admin-only Create/Update)
+Assume an e-commerce API.
+Public Route
+Everyone can view products.
+
+## Complete Security Flow
+
+REGISTER
+   ↓
+Password Hashing
+   ↓
+Store User
+   ↓
+LOGIN
+   ↓
+Verify Password
+   ↓
+Generate JWT Access Token
+
+
+Generate JWT Refresh Token
+   ↓
+Client Stores Tokens
+   ↓
+Protected API Request
+   ↓
+Authorization Header
+
+
+Bearer Token
+   ↓
+Depends(get_current_user)
+   ↓
+JWT Validation
+   ↓
+Role Check (Admin/User)
+   ↓
+Access Granted
+Final Outcome
+
+After implementing these components, your FastAPI project will support:
+
+--> Password hashing using Passlib & Bcrypt
+
+--> JWT Authentication (Access + Refresh Tokens)
+
+--> OAuth2PasswordBearer authentication flow
+
+--> Authentication endpoints (/register, /login, /me, /refresh)
+
+--> Route protection using Depends()
+
+--> Role-Based Access Control (Admin/User)
+
+--> Secure Product APIs (Admin-only create/update/delete)
+
+--> CORS middleware configuration
+
+--> Environment variables using .env and Pydantic Settings
+
+--> Production-ready secure REST APIs with authentication, authorization, and configuration management.
+
+
