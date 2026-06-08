@@ -1,0 +1,265 @@
+## Pagination in REST APIs (Offset-Based & Cursor-Based)
+Pagination is a technique used in APIs to divide large datasets into smaller chunks (pages) 
+instead of returning all records at once.
+
+--> Pagination is Important
+Without pagination:
+
+--> Large responses increase network traffic.
+--> Database queries become slower.
+--> High memory consumption.
+--> Poor user experience.
+--> Increased server load.
+
+Example:
+Instead of returning 100,000 products, return 20 products per request.
+
+## Offset-Based Pagination
+Offset pagination uses:
+--> limit → number of records to return
+--> offset → number of records to skip
+--> Request Example
+--> GET /api/v1/products?limit=10&offset=20
+
+Meaning:
+Skip first 20 records
+Return next 10 records
+
+Advantages of Offset Pagination
+Simple to Implement
+GET /products?limit=20&offset=40
+
+Easy for developers.
+
+Easy Page Navigation
+
+Page calculations are straightforward.
+
+Page 1 → offset 0
+Page 2 → offset 20
+Page 3 → offset 40
+Works Well for Small Datasets
+
+Good for:
+
+--> Admin dashboards
+--> Reports
+--> Internal tools
+--> Disadvantages of Offset Pagination
+--> Slow for Large Tables
+
+Example:
+OFFSET 100000
+
+Database must skip 100,000 rows before returning data.
+Performance decreases significantly.
+Duplicate or Missing Records
+
+Imagine:
+User loads page 1
+New product inserted
+User loads page 2
+
+Some records may:
+Appear twice
+Be skipped
+
+Example:
+Before insert:
+1 2 3 4 5
+
+After insert:
+0 1 2 3 4 5
+
+Offset shifts.
+Not Ideal for Real-Time Data
+
+Bad for:
+
+--> Social media feeds
+--> Messaging apps
+--> Live dashboards
+--> Offset Pagination with Page Number
+
+Many APIs use page numbers.
+Request:
+GET /products?page=3&page_size=20
+
+Convert internally:
+offset = (page - 1) * page_size
+
+Example:
+page = 3
+page_size = 20
+
+offset = (3 - 1) * 20
+offset = 40
+
+SQL:
+SELECT *
+FROM products
+LIMIT 20
+OFFSET 40;
+
+
+## Cursor Pagination
+Cursor-Based Pagination
+
+Cursor pagination uses a unique column (usually ID or timestamp) as a reference point.
+
+Instead of:
+
+?page=5
+
+We use:
+
+?cursor=150
+
+Meaning:
+
+Give records after ID 150
+Request Example
+GET /products?limit=10&cursor=150
+SQL Query
+SELECT *
+FROM products
+WHERE id > 150
+ORDER BY id
+LIMIT 10;
+FastAPI Example
+@app.get("/products")
+def get_products(cursor: int = 0, limit: int = 10):
+
+    return (
+        db.query(Product)
+        .filter(Product.id > cursor)
+        .order_by(Product.id)
+        .limit(limit)
+        .all()
+    )
+Response
+{
+    "items": [
+        {
+            "id": 151,
+            "name": "Laptop"
+        },
+        {
+            "id": 152,
+            "name": "Mouse"
+        }
+    ],
+    "next_cursor": 152
+}
+Next Request
+GET /products?limit=10&cursor=152
+
+Returns records after ID 152.
+
+Cursor Pagination Workflow
+Request 1:
+cursor = 0
+
+Returns:
+1 2 3 4 5
+
+next_cursor = 5
+
+↓
+
+Request 2:
+cursor = 5
+
+Returns:
+6 7 8 9 10
+
+next_cursor = 10
+Cursor Using Created Timestamp
+
+For feeds:
+
+SELECT *
+FROM posts
+WHERE created_at < '2026-01-01'
+ORDER BY created_at DESC
+LIMIT 20;
+
+Request:
+
+GET /posts?cursor=2026-01-01T10:00:00
+
+Useful for:
+
+Twitter/X feeds
+Instagram feeds
+LinkedIn feeds
+
+Advantages of Cursor Pagination
+Excellent Performance
+
+Database uses index efficiently.
+
+WHERE id > 150
+
+Much faster than:
+
+OFFSET 100000
+No Missing Records
+
+If new records are inserted:
+
+1 2 3 4 5
+
+then
+
+0 1 2 3 4 5
+
+cursor still continues correctly.
+
+Scales to Millions of Rows
+
+Used by:
+
+Social media
+E-commerce
+Streaming services
+Consistent Results
+
+Less affected by inserts/deletes.
+
+Disadvantages of Cursor Pagination
+Cannot Jump to Page 50
+
+Offset:
+
+?page=50
+
+Easy.
+
+Cursor:
+
+?cursor=???
+
+Must traverse pages sequentially.
+
+More Complex
+
+Need:
+
+Ordering rules
+Cursor generation
+Cursor validation
+Requires Unique Ordering
+
+Good columns:
+
+id
+created_at + id
+uuid
+
+Bad columns:
+
+name
+city
+
+Because duplicates exist.

@@ -1,0 +1,437 @@
+# RESTful API Design Principles (Detailed Guide)
+REST (Representational State Transfer) is an architectural style for designing web APIs. RESTful APIs use standard HTTP methods and follow a resource-based approach, making them scalable, maintainable, and easy to understand.
+
+1. Resource-Oriented Design
+In REST, everything is treated as a resource.
+
+Examples:
+--> User
+--> Product
+--> Order
+--> Category
+
+Each resource should have a unique URL.
+Good Examples
+/api/v1/users
+/api/v1/users/1
+
+/api/v1/products
+/api/v1/products/101
+
+/api/v1/orders
+/api/v1/orders/500
+
+
+Bad Examples
+/api/v1/getUsers
+/api/v1/createProduct
+/api/v1/deleteOrder
+
+URLs should represent nouns, not actions.
+
+2. Use HTTP Methods Correctly
+REST relies on HTTP verbs to perform actions.
+
+Method	    Purpose	                    Idempotent
+GET	        Read data	                    ✅
+POST	      Create data	                  ❌
+PUT	        Replace entire resource	      ✅
+PATCH	      Partial update	              ❌
+DELETE	    Remove resource	              ✅
+GET         Example
+
+GET /api/v1/products
+
+Response:
+
+[
+  {
+    "id": 1,
+    "name": "Laptop"
+  }
+]
+POST Example
+POST /api/v1/products
+
+Request:
+
+{
+  "name": "Laptop",
+  "price": 50000
+}
+
+Response:
+
+{
+  "id": 1,
+  "name": "Laptop",
+  "price": 50000
+}
+
+Status:
+
+201 Created
+PUT Example
+
+Replace complete object:
+
+PUT /api/v1/products/1
+{
+  "name": "Gaming Laptop",
+  "price": 70000
+}
+PATCH Example
+
+Update only one field:
+
+PATCH /api/v1/products/1
+{
+  "price": 65000
+}
+DELETE Example
+DELETE /api/v1/products/1
+
+Response:
+
+204 No Content
+3. Use Meaningful URLs
+Collections
+/api/v1/products
+/api/v1/users
+/api/v1/orders
+Single Resource
+/api/v1/products/10
+/api/v1/users/5
+Nested Resources
+
+When resources have relationships:
+
+/api/v1/users/5/orders
+/api/v1/orders/10/items
+
+Example:
+
+GET /api/v1/users/5/orders
+
+Returns all orders belonging to user 5.
+
+4. Use Proper HTTP Status Codes
+Success Codes
+Code	Meaning
+200	OK
+201	Created
+202	Accepted
+204	No Content
+
+Examples:
+
+200 OK
+201 Created
+204 No Content
+Client Error Codes
+Code	Meaning
+400	Bad Request
+401	Unauthorized
+403	Forbidden
+404	Not Found
+409	Conflict
+422	Validation Error
+
+Example:
+
+404 Not Found
+{
+  "error": "Product not found"
+}
+Server Error Codes
+Code	Meaning
+500	Internal Server Error
+502	Bad Gateway
+503	Service Unavailable
+5. Consistent Naming Conventions
+
+Use:
+
+/products
+/users
+/orders
+
+Avoid:
+
+/Product
+/getUsers
+Recommended
+Lowercase
+Hyphen-separated
+Plural nouns
+/product-categories
+/order-items
+/user-profiles
+6. API Versioning
+
+Version APIs to prevent breaking clients.
+
+URL Versioning
+/api/v1/products
+/api/v2/products
+
+Most common approach.
+
+Header Versioning
+Accept: application/vnd.company.v1+json
+
+Less common.
+
+7. Statelessness
+Every request must contain all required information.
+
+Good
+GET /api/v1/orders
+
+Authorization: Bearer JWT_TOKEN
+
+Server doesn't rely on previous requests.
+
+Bad
+Request 1:
+Store user in session
+
+Request 2:
+Retrieve from session
+REST APIs should remain stateless.
+
+8. Request and Response Format
+JSON is the industry standard.
+
+Request
+{
+  "name": "Laptop",
+  "price": 50000
+}
+Response
+{
+  "id": 1,
+  "name": "Laptop",
+  "price": 50000
+}
+
+9. Consistent Response Structure
+Success Response
+{
+  "success": true,
+  "message": "Product created",
+  "data": {
+    "id": 1,
+    "name": "Laptop"
+  }
+}
+Error Response
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "price": "Price must be positive"
+  }
+}
+Consistency makes frontend integration easier.
+
+10. Filtering
+Instead of creating multiple endpoints:
+
+Bad
+/products/electronics
+/products/active
+/products/in-stock
+
+Good
+GET /products?category=electronics
+GET /products?status=active
+GET /products?stock=true
+
+Combined:
+
+GET /products?category=electronics&stock=true
+11. Sorting
+
+Allow sorting using query parameters.
+
+GET /products?sort=price
+
+Ascending.
+
+GET /products?sort=-price
+
+Descending.
+
+Multiple fields:
+
+GET /products?sort=price,name
+12. Searching
+Use query parameters.
+GET /products?search=laptop
+or
+GET /products/search?q=laptop
+
+Preferred:
+GET /products?search=laptop
+
+13. Pagination
+Never return thousands of records.
+Offset Pagination
+GET /products?page=1&limit=10
+
+SQL:
+SELECT *
+FROM products
+LIMIT 10 OFFSET 0;
+
+Response:
+
+{
+  "page": 1,
+  "limit": 10,
+  "total": 100,
+  "data": []
+}
+Cursor Pagination
+
+Better for large datasets.
+
+GET /products?cursor=abc123&limit=10
+
+Response:
+
+{
+  "next_cursor": "xyz789",
+  "data": []
+}
+14. Security Best Practices
+
+Use HTTPS.
+https://api.example.com
+
+Never:
+http://api.example.com
+
+Authentication
+JWT Example:
+
+Authorization: Bearer eyJhbGc...
+Authorization
+
+Role-Based Access Control:
+
+Admin
+User
+Manager
+
+Example:
+DELETE /products/1
+
+Only Admin allowed.
+
+15. Idempotency
+An operation is idempotent if multiple identical requests produce the same result.
+
+GET
+GET /products/1
+100 times = same result.
+
+DELETE
+DELETE /products/1
+Deleting again doesn't create additional changes.
+
+PUT
+PUT /products/1
+
+Same payload repeatedly = same state.
+
+16. Documentation
+Every API should include:
+
+--> Endpoint
+--> Method
+--> Request Body
+--> Response Body
+--> Authentication
+--> Status Codes
+
+For FastAPI:
+
+app = FastAPI(
+    title="Product API",
+    version="1.0.0"
+)
+
+Automatic docs:
+
+/docs
+
+Swagger UI
+
+/redoc
+
+ReDoc
+
+17. Example RESTful Product API Structure
+GET     /api/v1/products
+GET     /api/v1/products/{id}
+
+POST    /api/v1/products
+
+PUT     /api/v1/products/{id}
+
+PATCH   /api/v1/products/{id}
+
+DELETE  /api/v1/products/{id}
+
+Advanced:
+
+GET /api/v1/products?
+    search=laptop&
+    category=electronics&
+    sort=-price&
+    page=1&
+    limit=20
+REST API Design Checklist
+
+-->  Resource-based URLs
+
+-->  Proper HTTP methods
+
+-->  Stateless requests
+
+-->  JSON responses
+
+-->  Versioned endpoints
+
+-->  Filtering
+
+-->  Sorting
+
+-->  Searching
+
+-->  Pagination
+
+-->  Proper status codes
+
+-->  Consistent error responses
+
+-->  JWT Authentication
+
+-->  Role-based authorization
+
+-->  HTTPS
+
+-->  Swagger documentation
+
+--> For your FastAPI Product Listing API, a production-ready endpoint would look like:
+# HTTP
+GET /api/v1/products?
+search=laptop&
+category=electronics&
+min_price=10000&
+max_price=100000&
+sort=-price&
+page=1&
+limit=20

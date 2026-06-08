@@ -1,0 +1,478 @@
+## API Design Patterns & Error Handling
+These topics are essential for building production-ready APIs using frameworks like FastAPI,
+ Django REST Framework, Flask, Spring Boot, or Node.js Express.
+1. Search Endpoints
+A search endpoint allows users to find resources based on keywords or criteria.
+
+# Example
+
+Imagine an e-commerce application with products.
+
+Endpoint
+GET /api/v1/products/search?q=laptop
+Response
+{
+    "products": [
+        {
+            "id": 1,
+            "name": "Dell Laptop",
+            "price": 50000
+        }
+    ]
+}
+FastAPI Example
+from fastapi import FastAPI, Query
+
+app = FastAPI()
+
+products = [
+    {"id": 1, "name": "Dell Laptop"},
+    {"id": 2, "name": "HP Laptop"},
+    {"id": 3, "name": "iPhone"}
+]
+
+@app.get("/products/search")
+def search_products(q: str = Query(...)):
+    result = [
+        product for product in products
+        if q.lower() in product["name"].lower()
+    ]
+    return result
+Database Search Using SQLAlchemy
+from sqlalchemy import select
+
+stmt = select(Product).where(
+    Product.name.ilike(f"%{query}%")
+)
+
+products = session.execute(stmt).scalars().all()
+ilike()
+
+Case-insensitive search.
+
+SELECT * FROM products
+WHERE name ILIKE '%laptop%'
+Multiple Search Fields
+stmt = select(Product).where(
+    Product.name.ilike(f"%{query}%") |
+    Product.description.ilike(f"%{query}%")
+)
+
+Searches in:
+
+Name
+Description
+Best Practices
+
+--> Support partial matches
+
+--> Case-insensitive search
+
+--> Pagination
+
+--> Search multiple columns
+
+--> Use database indexing
+
+
+## Standardized Error Responses
+All API errors should follow the same structure.
+
+Bad Example
+{
+  "error": "User not found"
+}
+
+Another endpoint:
+
+{
+  "message": "Invalid email"
+}
+
+Inconsistent.
+
+Good Standard Format
+{
+  "success": false,
+  "error": {
+      "code": "USER_NOT_FOUND",
+      "message": "User does not exist"
+  }
+}
+
+
+Validation Error Format
+{
+    "success": false,
+    "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Email is required",
+        "field": "email"
+    }
+}
+
+
+Internal Server Error
+{
+    "success": false,
+    "error": {
+        "code": "SERVER_ERROR",
+        "message": "Something went wrong"
+    }
+}
+
+Benefits
+--> Easy frontend integration
+--> Consistent responses
+--> Easier debugging
+--> Better documentation
+
+
+## Custom Exception Handlers
+
+Instead of writing try-except everywhere, define global handlers.
+
+Custom Exception
+class ProductNotFoundException(Exception):
+    def __init__(self, product_id):
+        self.product_id = product_id
+Exception Handler
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(ProductNotFoundException)
+async def product_exception_handler(
+    request: Request,
+    exc: ProductNotFoundException
+):
+    return JSONResponse(
+        status_code=404,
+        content={
+            "success": False,
+            "error": {
+                "code": "PRODUCT_NOT_FOUND",
+                "message": f"Product {exc.product_id} not found"
+            }
+        }
+    )
+Usage
+@app.get("/products/{id}")
+def get_product(id: int):
+
+    product = find_product(id)
+
+    if not product:
+        raise ProductNotFoundException(id)
+
+    return product
+Advantages
+Centralized error handling
+Cleaner code
+Reusable
+
+
+## HTTPException Usage
+
+FastAPI provides HTTPException.
+
+Syntax
+from fastapi import HTTPException
+Example
+@app.get("/users/{id}")
+def get_user(id: int):
+
+    user = find_user(id)
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    return user
+Common Status Codes
+Code	Meaning
+200	Success
+201	Created
+204	No Content
+400	Bad Request
+401	Unauthorized
+403	Forbidden
+404	Not Found
+409	Conflict
+422	Validation Error
+500	Internal Server Error
+Example Authentication
+raise HTTPException(
+    status_code=401,
+    detail="Invalid credentials"
+)
+Example Authorization
+raise HTTPException(
+    status_code=403,
+    detail="Admin access required"
+)
+
+## Logging with Structlog
+
+Traditional logging is hard to search.
+
+Traditional Logging
+import logging
+
+logging.info(
+    f"User {user_id} created product {product_id}"
+)
+
+Output:
+
+User 10 created product 5
+
+Not structured.
+
+Structlog
+
+Install:
+
+pip install structlog
+Setup
+import structlog
+
+logger = structlog.get_logger()
+Usage
+logger.info(
+    "product_created",
+    product_id=10,
+    user_id=5
+)
+
+Output:
+
+{
+    "event":"product_created",
+    "product_id":10,
+    "user_id":5
+}
+Error Logging
+try:
+    divide = 10 / 0
+except Exception as e:
+    logger.error(
+        "division_error",
+        error=str(e)
+    )
+Benefits
+JSON logs
+Better monitoring
+Easy filtering
+Production ready
+
+## Request ID Middleware
+
+Every request gets a unique ID.
+
+Useful for tracing logs.
+
+Example
+
+Request:
+
+GET /products
+
+Generated:
+
+request_id=abc123
+Middleware
+import uuid
+from fastapi import Request
+
+@app.middleware("http")
+async def add_request_id(
+    request: Request,
+    call_next
+):
+    request_id = str(uuid.uuid4())
+
+    request.state.request_id = request_id
+
+    response = await call_next(request)
+
+    response.headers["X-Request-ID"] = request_id
+
+    return response
+Logging Request ID
+logger.info(
+    "request_received",
+    request_id=request.state.request_id
+)
+Benefits
+
+Imagine:
+
+10000 requests/day
+
+A user reports an issue.
+
+You can search logs:
+
+request_id=abc123
+
+and find the complete request flow.
+
+
+## API Versioning
+
+Versioning prevents breaking existing clients.
+
+Bad
+/api/products
+
+If API changes, old applications break.
+
+Good
+/api/v1/products
+/api/v2/products
+FastAPI Example
+from fastapi import APIRouter
+
+v1_router = APIRouter(prefix="/api/v1")
+
+@v1_router.get("/products")
+def get_products():
+    return {"version": "v1"}
+Version 2
+v2_router = APIRouter(prefix="/api/v2")
+
+@v2_router.get("/products")
+def get_products():
+    return {
+        "version": "v2",
+        "currency": "INR"
+    }
+Benefits
+Backward compatibility
+Safe upgrades
+Easier maintenance
+
+
+## Postman Collections, Environments, and Tests
+Collections
+A collection stores API requests.
+
+Example:
+
+Product APIs
+ ├── GET Products
+ ├── GET Product By ID
+ ├── POST Product
+ ├── DELETE Product
+Environments
+
+Store variables.
+
+Dev
+base_url=http://localhost:8000
+
+Production
+base_url=https://api.company.com
+
+Usage
+{{base_url}}/products
+
+Tests
+
+Validate Status
+pm.test("Status code is 200", function () {
+    pm.response.to.have.status(200);
+});
+
+
+Validate Response
+pm.test("Product exists", function () {
+
+    var jsonData = pm.response.json();
+
+    pm.expect(jsonData.id).to.exist;
+});\
+
+
+Save Token
+let response = pm.response.json();
+
+pm.environment.set(
+    "token",
+    response.access_token
+);
+
+
+## Build Product Listing API with Search & Filters
+
+This combines all previous concepts.
+
+Product Model
+class Product(Base):
+
+    __tablename__ = "products"
+
+    id = Column(Integer, primary_key=True)
+
+    name = Column(String)
+
+    category = Column(String)
+
+    price = Column(Float)
+
+    stock = Column(Integer)
+
+
+Endpoint
+GET /api/v1/products
+
+
+Filters
+/api/v1/products?category=Electronics
+/api/v1/products?min_price=1000
+/api/v1/products?max_price=50000
+/api/v1/products?stock=true
+
+
+Search
+/api/v1/products?search=laptop
+
+Sorting
+/api/v1/products?sort_by=price
+
+Pagination
+/api/v1/products?page=1&size=10
+
+Production Architecture for a Product API
+Client
+   │
+   ▼
+Request
+   │
+   ▼
+Request ID Middleware
+   │
+   ▼
+Authentication
+   │
+   ▼
+Product Endpoint
+   │
+   ├── Search
+   ├── Filter
+   ├── Sort
+   ├── Pagination
+   │
+   ▼
+Database
+   │
+   ▼
+Response
+   │
+   ▼
+Structlog Logging
+   │
+   ▼
+Standardized Error Handling

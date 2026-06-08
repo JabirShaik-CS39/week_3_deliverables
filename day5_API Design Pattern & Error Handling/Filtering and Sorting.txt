@@ -1,0 +1,211 @@
+## Filtering 
+Filtering and sorting are essential features in APIs that allow clients to retrieve only the 
+data they need and in the order they want.
+Filtering allows users to retrieve a subset of data based on specific conditions.
+
+# Example Product Data
+[
+    {
+        "id": 1,
+        "name": "Laptop",
+        "category": "Electronics",
+        "price": 50000,
+        "stock": 10
+    },
+    {
+        "id": 2,
+        "name": "Phone",
+        "category": "Electronics",
+        "price": 25000,
+        "stock": 5
+    },
+    {
+        "id": 3,
+        "name": "Shirt",
+        "category": "Fashion",
+        "price": 1000,
+        "stock": 20
+    }
+]
+
+Without filtering:
+GET /products
+Returns all products.
+
+With filtering:
+GET /products?category=Electronics
+Returns only electronics products.
+
+# Filtering is Important
+
+Without filtering:
+
+--> Large response size
+--> Slow API performance
+--> More network usage
+--> Unnecessary data transfer
+
+With filtering:
+
+--> Faster response
+--> Reduced database load
+--> Better user experience
+--> Common Filtering Types
+
+A. Exact Match Filter
+Used when the field value must exactly match.
+
+Request
+GET /products?category=Electronics
+
+SQL
+SELECT * FROM products
+WHERE category='Electronics';
+
+B. Multiple Filters
+Apply more than one condition.
+
+Request
+GET /products?category=Electronics&stock=10
+SQL
+SELECT * FROM products
+WHERE category='Electronics'
+AND stock=10;
+
+C. Range Filtering
+Used for prices, dates, ages, ratings, etc.
+
+Request
+GET /products?min_price=1000&max_price=50000
+SQL
+SELECT *
+FROM products
+WHERE price >= 1000
+AND price <= 50000;
+
+D. Date Range Filtering
+
+Request
+GET /orders?start_date=2025-01-01&end_date=2025-01-31
+SQL
+SELECT *
+FROM orders
+WHERE order_date
+BETWEEN '2025-01-01'
+AND '2025-01-31';
+
+E. Boolean Filtering
+
+Request
+GET /products?available=true
+SQL
+SELECT *
+FROM products
+WHERE available = true;
+
+F. List Filtering
+Retrieve records matching multiple values.
+
+Request
+GET /products?category=Electronics,Fashion
+SQL
+SELECT *
+FROM products
+WHERE category IN
+('Electronics', 'Fashion');
+
+G. Search-Based Filtering
+Request
+GET /products?name=laptop
+SQL
+SELECT *
+FROM products
+WHERE name ILIKE '%laptop%';
+
+## sorting
+
+Sorting determines the order in which records are returned.
+Default Order
+GET /products
+
+Might return:
+1,2,3,4,5
+Sort by Price
+
+GET /products?sort=price
+Result:
+1000
+2500
+5000
+10000
+Ascending order.
+
+Sorting Types
+
+A. Ascending Order
+
+Small to large.
+Request
+GET /products?sort=price
+
+or
+
+GET /products?sort=price:asc
+
+SQL
+SELECT *
+FROM products
+ORDER BY price ASC;
+
+B. Descending Order
+Large to small.
+Request
+GET /products?sort=price:desc
+
+SQL
+SELECT *
+FROM products
+ORDER BY price DESC;
+
+C. Sort by Date
+Latest records first.
+
+Request
+GET /products?sort=created_at:desc
+SQL
+SELECT *
+FROM products
+ORDER BY created_at DESC;
+
+D. Multiple Sorting Fields
+Request
+GET /products?sort=category,price
+SQL
+SELECT *
+FROM products
+ORDER BY category ASC,
+         price ASC;
+         
+Mixed Order
+GET /products?sort=category:asc,price:desc
+SQL
+SELECT *
+FROM products
+ORDER BY category ASC,
+         price DESC;
+Combining Filtering and Sorting
+
+Most APIs combine both.
+
+Request
+GET /products?
+category=Electronics
+&min_price=10000
+&max_price=50000
+&sort=price:desc
+SQL
+SELECT *
+FROM products
+WHERE category='Electronics'
+AND price BETWEEN 10000 AND 50000
+ORDER BY price DESC;
